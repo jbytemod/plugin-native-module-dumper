@@ -8,8 +8,9 @@ A plugin for [JByteMod Remastered](https://github.com/jbytemod/JByteMod-Remaster
 - Shows each library's name, size, and source path.
 - Filters the module list by name or path.
 - Dumps one, several, or all listed libraries.
-- Reads libraries through JByteMod's authenticated attached-JVM agent connection.
-- Depends only on the JByteMod API.
+- Ships its own target-side agent extension and uses JByteMod's generic authenticated extension transport.
+- Adds native-module tools to the MCP Server plugin when both plugins are enabled.
+- Keeps both JByteMod API and optional MCP dependencies outside the plugin JAR.
 
 ## Limitations
 
@@ -20,6 +21,17 @@ The plugin only lists libraries known to the JVM that still have a readable back
 - JByteMod Remastered 2.11.0 or newer
 - Java 21 or newer
 - An active attachment to a JVM
+- MCP Server 1.0.0 or newer for optional MCP tools
+
+## MCP integration
+
+When the [MCP Server plugin](https://github.com/jbytemod/plugin-mcp) is installed and enabled, the dumper registers these additional tools:
+
+- `list_native_modules`
+- `dump_native_module`
+- `dump_all_native_modules`
+
+The Native Module Dumper continues to work as a regular GUI plugin when MCP Server is absent or disabled.
 
 ## Installation
 

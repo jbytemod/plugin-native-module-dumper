@@ -1,6 +1,5 @@
 package de.xbrowniecodez.jbytemod.nativedump;
 
-import de.xbrowniecodez.jbytemod.plugin.JvmNativeLibrary;
 import de.xbrowniecodez.jbytemod.plugin.PluginContext;
 
 import javax.swing.BorderFactory;
@@ -38,6 +37,7 @@ import java.util.regex.Pattern;
 
 final class NativeModuleDialog extends JDialog {
     private final PluginContext context;
+    private final NativeModuleService service;
     private final NativeModuleTableModel model = new NativeModuleTableModel();
     private final JTable table = new JTable(model);
     private final TableRowSorter<NativeModuleTableModel> sorter = new TableRowSorter<>(model);
@@ -51,6 +51,7 @@ final class NativeModuleDialog extends JDialog {
     NativeModuleDialog(Window owner, PluginContext context) {
         super(owner, "Native Module Dumper", ModalityType.MODELESS);
         this.context = context;
+        this.service = new NativeModuleService(context);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(8, 8));
         ((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -133,16 +134,16 @@ final class NativeModuleDialog extends JDialog {
 
     private void refreshModules() {
         setBusy(true, "Reading loaded native libraries...");
-        new SwingWorker<List<JvmNativeLibrary>, Void>() {
+        new SwingWorker<List<NativeModule>, Void>() {
             @Override
-            protected List<JvmNativeLibrary> doInBackground() throws Exception {
-                return context.getAttachedJvmNativeLibraries();
+            protected List<NativeModule> doInBackground() throws Exception {
+                return service.listModules();
             }
 
             @Override
             protected void done() {
                 try {
-                    List<JvmNativeLibrary> libraries = get();
+                    List<NativeModule> libraries = get();
                     model.setLibraries(libraries);
                     setBusy(false, libraries.size() + " native libraries found");
                 } catch (Exception exception) {
@@ -155,7 +156,7 @@ final class NativeModuleDialog extends JDialog {
     }
 
     private void dumpSelected() {
-        List<JvmNativeLibrary> selected = selectedLibraries();
+        List<NativeModule> selected = selectedLibraries();
         if (selected.isEmpty()) return;
         if (selected.size() == 1) {
             JFileChooser chooser = new JFileChooser();
@@ -183,7 +184,7 @@ final class NativeModuleDialog extends JDialog {
                 ? chooser.getSelectedFile().toPath() : null;
     }
 
-    private void dumpLibraries(List<JvmNativeLibrary> libraries, Path directory, String singleFileName) {
+    private void dumpLibraries(List<NativeModule> libraries, Path directory, String singleFileName) {
         if (directory == null) directory = Path.of(".").toAbsolutePath();
         Path targetDirectory = directory;
         setBusy(true, "Dumping " + libraries.size() + " native libraries...");
@@ -193,11 +194,11 @@ final class NativeModuleDialog extends JDialog {
                 Files.createDirectories(targetDirectory);
                 Set<String> usedNames = new HashSet<>();
                 int dumped = 0;
-                for (JvmNativeLibrary library : libraries) {
+                for (NativeModule library : libraries) {
                     String name = singleFileName == null
                             ? uniqueFileName(targetDirectory, safeFileName(library.name()), usedNames)
                             : singleFileName;
-                    byte[] bytes = context.readAttachedJvmNativeLibrary(library.path());
+                    byte[] bytes = service.dumpModule(library.path());
                     Files.write(targetDirectory.resolve(name), bytes);
                     dumped++;
                 }
@@ -217,8 +218,8 @@ final class NativeModuleDialog extends JDialog {
         }.execute();
     }
 
-    private List<JvmNativeLibrary> selectedLibraries() {
-        List<JvmNativeLibrary> selected = new ArrayList<>();
+    private List<NativeModule> selectedLibraries() {
+        List<NativeModule> selected = new ArrayList<>();
         for (int viewRow : table.getSelectedRows()) {
             selected.add(model.libraryAt(table.convertRowIndexToModel(viewRow)));
         }
@@ -291,18 +292,18 @@ final class NativeModuleDialog extends JDialog {
 
     private static final class NativeModuleTableModel extends AbstractTableModel {
         private final String[] columns = {"Name", "Size", "Path"};
-        private List<JvmNativeLibrary> libraries = List.of();
+        private List<NativeModule> libraries = List.of();
 
-        void setLibraries(List<JvmNativeLibrary> libraries) {
+        void setLibraries(List<NativeModule> libraries) {
             this.libraries = List.copyOf(libraries);
             fireTableDataChanged();
         }
 
-        List<JvmNativeLibrary> libraries() {
+        List<NativeModule> libraries() {
             return libraries;
         }
 
-        JvmNativeLibrary libraryAt(int row) {
+        NativeModule libraryAt(int row) {
             return libraries.get(row);
         }
 
@@ -328,7 +329,7 @@ final class NativeModuleDialog extends JDialog {
 
         @Override
         public Object getValueAt(int row, int column) {
-            JvmNativeLibrary library = libraries.get(row);
+            NativeModule library = libraries.get(row);
             return switch (column) {
                 case 0 -> library.name();
                 case 1 -> library.size();
