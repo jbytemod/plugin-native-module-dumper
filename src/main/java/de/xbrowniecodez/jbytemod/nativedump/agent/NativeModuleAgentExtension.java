@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,16 +77,9 @@ public final class NativeModuleAgentExtension {
                 .map(Path::of)
                 .map(path -> path.toAbsolutePath().normalize())
                 .filter(Files::isRegularFile)
-                .filter(NativeModuleAgentExtension::isNativeModule)
                 .distinct()
                 .sorted((left, right) -> left.toString().compareToIgnoreCase(right.toString()))
                 .toList();
-    }
-
-    private static boolean isNativeModule(Path path) {
-        String name = path.getFileName().toString().toLowerCase(Locale.ROOT);
-        return name.endsWith(".dll") || name.endsWith(".so") || name.endsWith(".dylib")
-                || name.endsWith(".jnilib");
     }
 
     private static void writeString(DataOutputStream output, String value) throws Exception {

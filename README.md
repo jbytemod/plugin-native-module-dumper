@@ -5,6 +5,7 @@ A plugin for [JByteMod Remastered](https://github.com/jbytemod/JByteMod-Remaster
 ## Features
 
 - Lists native libraries loaded through `System.load` and `System.loadLibrary`.
+- Includes loaded libraries with arbitrary file names, such as `.tmp`, `.bin`, or no extension.
 - Shows each library's name, size, and source path.
 - Filters the module list by name or path.
 - Dumps one, several, or all listed libraries.
@@ -41,7 +42,7 @@ Build the plugin:
 mvn package
 ```
 
-Copy `target/plugin-native-module-dumper-1.0.0.jar` into JByteMod's plugin directory:
+Copy `target/plugin-native-module-dumper-1.0.1.jar` into JByteMod's plugin directory:
 
 - Windows: `%APPDATA%\JByteMod-Remastered\plugins`
 - macOS: `~/Library/Application Support/JByteMod-Remastered/plugins`

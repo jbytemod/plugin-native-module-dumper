@@ -6,7 +6,7 @@
 
     <groupId>brownie</groupId>
     <artifactId>jbytemod-native-module-dumper-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>JByteMod Native Module Dumper Plugin</name>
 
     <properties>
